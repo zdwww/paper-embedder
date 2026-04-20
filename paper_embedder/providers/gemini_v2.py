@@ -13,6 +13,7 @@ import hashlib
 from typing import Literal
 
 import numpy as np
+from google import genai
 
 
 _V2_DOC_PREFIX = "Represent this document for retrieval: "
@@ -60,4 +61,16 @@ class GeminiV2Provider:
         *,
         mode: Literal["document", "query"],
     ) -> list[np.ndarray]:
-        raise NotImplementedError("embed() implemented in Task 8")
+        prefix = _V2_DOC_PREFIX if mode == "document" else _V2_QUERY_PREFIX
+        prefixed = [prefix + self.truncate(t) for t in texts]
+
+        if self._client is None:
+            self._client = genai.Client(api_key=self._api_key)
+
+        response = self._client.models.embed_content(
+            model=self._model_name,
+            contents=prefixed,
+        )
+        return [
+            np.asarray(emb.values, dtype=np.float32) for emb in response.embeddings
+        ]

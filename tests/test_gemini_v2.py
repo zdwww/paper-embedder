@@ -63,3 +63,70 @@ def test_gemini_v2_truncate_shortens_long_text_below_budget():
     # char budget ≈ 7980 tokens * 4 chars/token = 31920
     assert len(truncated) <= 31920
     assert len(truncated) < len(long_text)
+
+
+from unittest.mock import MagicMock, patch
+
+
+class _FakeEmbedResult:
+    def __init__(self, vectors: list[list[float]]):
+        self.embeddings = [MagicMock(values=v) for v in vectors]
+
+
+def _make_fake_client(output_vectors_per_call: list[list[list[float]]]) -> MagicMock:
+    """Returns a MagicMock genai.Client whose .models.embed_content returns
+    one _FakeEmbedResult per call, in order."""
+    client = MagicMock()
+    results = [_FakeEmbedResult(vs) for vs in output_vectors_per_call]
+    client.models.embed_content.side_effect = results
+    return client
+
+
+def test_embed_document_mode_prepends_doc_prefix():
+    from paper_embedder.providers.gemini_v2 import _V2_DOC_PREFIX, GeminiV2Provider
+
+    fake = _make_fake_client([[[0.1] * 1536, [0.2] * 1536]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        vecs = p.embed(["doc A", "doc B"], mode="document")
+
+    assert len(vecs) == 2
+    assert vecs[0].shape == (1536,)
+    call_kwargs = fake.models.embed_content.call_args.kwargs
+    contents = call_kwargs["contents"]
+    assert all(c.startswith(_V2_DOC_PREFIX) for c in contents)
+    assert contents[0] == _V2_DOC_PREFIX + "doc A"
+
+
+def test_embed_query_mode_prepends_query_prefix():
+    from paper_embedder.providers.gemini_v2 import _V2_QUERY_PREFIX, GeminiV2Provider
+
+    fake = _make_fake_client([[[0.3] * 1536]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        vecs = p.embed(["what is attention?"], mode="query")
+
+    contents = fake.models.embed_content.call_args.kwargs["contents"]
+    assert contents[0] == _V2_QUERY_PREFIX + "what is attention?"
+
+
+def test_embed_returns_float32_arrays():
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    fake = _make_fake_client([[[0.1] * 1536]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        vecs = p.embed(["hi"], mode="document")
+
+    assert vecs[0].dtype == np.float32
+
+
+def test_embed_passes_model_name():
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    fake = _make_fake_client([[[0.1] * 1536]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        p.embed(["hi"], mode="document")
+
+    assert fake.models.embed_content.call_args.kwargs["model"] == "gemini-embedding-2-preview"
