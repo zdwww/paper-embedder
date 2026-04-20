@@ -64,7 +64,7 @@ def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):
 
     fake_client = type("FakeClient", (), {})()
     fake_client.models = type("M", (), {})()
-    fake_client.models.embed_content = lambda model, contents: _FakeResult(
+    fake_client.models.embed_content = lambda model, contents, config: _FakeResult(
         [[0.1] * 1536 for _ in contents]
     )
 

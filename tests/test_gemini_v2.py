@@ -129,6 +129,31 @@ def test_embed_passes_model_name():
     assert fake.models.embed_content.call_args.kwargs["model"] == "gemini-embedding-2-preview"
 
 
+def test_embed_passes_output_dimensionality_to_api():
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    fake = _make_fake_client([[[0.1] * 3072]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=3072)
+        p.embed(["hi"], mode="document")
+
+    call_kwargs = fake.models.embed_content.call_args.kwargs
+    assert "config" in call_kwargs
+    assert call_kwargs["config"].output_dimensionality == 3072
+
+
+def test_embed_passes_output_dimensionality_matches_dim_config():
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    fake = _make_fake_client([[[0.1] * 768]])
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=768)
+        p.embed(["hi"], mode="document")
+
+    call_kwargs = fake.models.embed_content.call_args.kwargs
+    assert call_kwargs["config"].output_dimensionality == 768
+
+
 def test_embed_retries_on_transient_error_then_succeeds(monkeypatch):
     from paper_embedder.providers.gemini_v2 import GeminiV2Provider
 

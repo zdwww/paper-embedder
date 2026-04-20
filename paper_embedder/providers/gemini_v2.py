@@ -16,6 +16,7 @@ from typing import Literal
 import numpy as np
 import numpy.typing as npt
 from google import genai
+from google.genai import types
 
 from paper_embedder.errors import ProviderError
 
@@ -86,6 +87,9 @@ class GeminiV2Provider:
                 response = self._client.models.embed_content(
                     model=self._model_name,
                     contents=prefixed,
+                    config=types.EmbedContentConfig(
+                        output_dimensionality=self.dim,
+                    ),
                 )
                 embeddings = response.embeddings or []
                 return [
