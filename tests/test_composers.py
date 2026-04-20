@@ -48,7 +48,12 @@ def test_compose_abstract_non_paper_skips_missing_fields():
     from paper_embedder.types import PaperDescriptor
 
     desc = PaperDescriptor(
-        paper_id="n1", title="Bare Item", item_type="non_paper", creators=None, notes=None, tags=None,
+        paper_id="n1",
+        title="Bare Item",
+        item_type="non_paper",
+        creators=None,
+        notes=None,
+        tags=None,
     )
     assert compose_abstract_text(desc) == "Bare Item"
 

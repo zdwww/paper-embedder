@@ -18,7 +18,6 @@ from google import genai
 
 from paper_embedder.errors import ProviderError
 
-
 _V2_DOC_PREFIX = "Represent this document for retrieval: "
 _V2_QUERY_PREFIX = "Represent this query for retrieval: "
 _V2_HARD_CAP_TOKENS = 8192
@@ -57,7 +56,7 @@ class GeminiV2Provider:
         self.dim = dim
         self._base_url = base_url
         self.max_input_tokens = _V2_MAX_INPUT_TOKENS - 192  # keep consistent with char budget
-        self._client = None  # lazy — instantiated on first embed() call
+        self._client: genai.Client | None = None  # lazy — instantiated on first embed() call
 
     def fingerprint(self) -> str:
         payload = f"{self.name}|{self._model_name}|{self.dim}|v2-prefix-injection"
@@ -87,9 +86,10 @@ class GeminiV2Provider:
                     model=self._model_name,
                     contents=prefixed,
                 )
+                embeddings = response.embeddings or []
                 return [
                     np.asarray(emb.values, dtype=np.float32)
-                    for emb in response.embeddings
+                    for emb in embeddings
                 ]
             except Exception as exc:
                 if not _is_transient(exc) or attempt >= _MAX_RETRIES:

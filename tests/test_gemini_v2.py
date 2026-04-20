@@ -1,6 +1,6 @@
 """GeminiV2Provider — protocol compliance, fingerprint stability, truncation budget."""
 
-import hashlib
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -65,9 +65,6 @@ def test_gemini_v2_truncate_shortens_long_text_below_budget():
     assert len(truncated) < len(long_text)
 
 
-from unittest.mock import MagicMock, patch
-
-
 class _FakeEmbedResult:
     def __init__(self, vectors: list[list[float]]):
         self.embeddings = [MagicMock(values=v) for v in vectors]
@@ -104,7 +101,7 @@ def test_embed_query_mode_prepends_query_prefix():
     fake = _make_fake_client([[[0.3] * 1536]])
     with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
         p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
-        vecs = p.embed(["what is attention?"], mode="query")
+        p.embed(["what is attention?"], mode="query")
 
     contents = fake.models.embed_content.call_args.kwargs["contents"]
     assert contents[0] == _V2_QUERY_PREFIX + "what is attention?"

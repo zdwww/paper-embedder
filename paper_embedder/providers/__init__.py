@@ -5,7 +5,6 @@ from paper_embedder.providers.base import EmbedMode, Provider
 from paper_embedder.providers.gemini_v2 import GeminiV2Provider
 from paper_embedder.types import ProviderConfig
 
-
 _GEMINI_V2_DEFAULT_DIM = 1536
 
 

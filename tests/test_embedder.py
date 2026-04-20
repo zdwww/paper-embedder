@@ -50,8 +50,6 @@ def test_embed_query_strips_surrounding_whitespace():
 
 
 def test_embed_paper_with_pdf_returns_both_vectors(monkeypatch, tmp_path):
-    from pathlib import Path
-
     from paper_embedder import embedder, section_extractor
     from paper_embedder.embedder import embed_paper
     from paper_embedder.types import PaperDescriptor
@@ -135,8 +133,16 @@ def test_embed_paper_extraction_failure_returns_abstract_only(monkeypatch, tmp_p
     from paper_embedder.types import PaperDescriptor
 
     # Section extraction returns None — simulating corrupted PDF
-    monkeypatch.setattr(section_extractor, "extract_intro_and_methods", lambda p, max_scan_pages=10: None)
-    monkeypatch.setattr(embedder, "extract_intro_and_methods", section_extractor.extract_intro_and_methods)
+    monkeypatch.setattr(
+        section_extractor,
+        "extract_intro_and_methods",
+        lambda p, max_scan_pages=10: None,
+    )
+    monkeypatch.setattr(
+        embedder,
+        "extract_intro_and_methods",
+        section_extractor.extract_intro_and_methods,
+    )
 
     pdf = tmp_path / "bad.pdf"
     pdf.write_bytes(b"%PDF-fake")
@@ -170,7 +176,6 @@ def test_embed_paper_does_not_modify_input_pdf(tmp_path):
     """Bottom-line invariant (spec §1): never modify source PDFs. Check SHA-256 +
     mtime + size before and after a full embed_paper call."""
     import hashlib
-    import os
 
     from paper_embedder.embedder import embed_paper
     from paper_embedder.types import PaperDescriptor

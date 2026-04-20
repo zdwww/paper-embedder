@@ -9,7 +9,9 @@ the text between page 0 and that stop page.
 from __future__ import annotations
 
 import re
-
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
 
 _HEADING_RE = re.compile(
     r"^\s*(\d+)\.?\s+([A-Z][A-Za-z][A-Za-z ]{2,40})\s*$"
@@ -44,11 +46,8 @@ def _is_stop_keyword(title: str) -> bool:
     return title.strip().lower() in _STOP_KEYWORDS
 
 
-from pathlib import Path
-
-
 # Indirection so tests can monkeypatch without importing pdfminer.
-def _pdfminer_extract_pages(path: Path):
+def _pdfminer_extract_pages(path: Path) -> Iterator[Any]:
     from pdfminer.high_level import extract_pages
     return extract_pages(str(path))
 

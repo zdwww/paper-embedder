@@ -8,6 +8,7 @@ from typing import Literal
 
 import numpy as np
 
+from paper_embedder.errors import ConfigError
 
 ItemType = Literal["paper", "non_paper"]
 _VALID_ITEM_TYPES: tuple[str, ...] = ("paper", "non_paper")
@@ -39,9 +40,6 @@ class PaperDescriptor:
             )
 
 
-from paper_embedder.errors import ConfigError
-
-
 ProviderName = Literal["gemini_v2", "openai", "huggingface"]
 _VALID_PROVIDERS: tuple[str, ...] = ("gemini_v2", "openai", "huggingface")
 
@@ -69,4 +67,4 @@ class PaperEmbeddingResult:
 
     abstract_vec: np.ndarray
     fulltext_vec: np.ndarray | None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=dict)

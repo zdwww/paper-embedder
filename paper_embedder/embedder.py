@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 
 from paper_embedder.composers import compose_abstract_text, compose_section_fulltext

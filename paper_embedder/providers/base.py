@@ -6,7 +6,6 @@ from typing import Literal, Protocol, runtime_checkable
 
 import numpy as np
 
-
 EmbedMode = Literal["document", "query"]
 
 
@@ -22,7 +21,8 @@ class Provider(Protocol):
         """Embed a batch of texts. `mode` selects document- vs. query-side handling
         (e.g. Gemini v2 uses different prefixes, OpenAI ignores, etc.).
         Returns one np.ndarray of shape (dim,) per input text.
-        Retries transient errors internally, up to 3 times; raises ProviderError on permanent failure.
+        Retries transient errors internally, up to 3 times; raises ProviderError
+        on permanent failure.
         """
         ...
 
