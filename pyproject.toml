@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paper-embedder"
-version = "0.2.0"
+version = "0.2.1"
 description = "Shared paper-embedding extraction library for zotero-mcp and My-Research-Assistant."
 readme = "README.md"
 requires-python = ">=3.10"
