@@ -53,3 +53,36 @@ def test_paper_descriptor_rejects_bad_item_type():
 
     with pytest.raises((ValueError, TypeError)):
         PaperDescriptor(paper_id="p1", title="T", item_type="bogus")  # type: ignore[arg-type]
+
+
+def test_provider_config_gemini_v2():
+    from paper_embedder.types import ProviderConfig
+
+    cfg = ProviderConfig(
+        provider="gemini_v2",
+        model_name="gemini-embedding-2-preview",
+        api_key="sk-test",
+        dimension=1536,
+    )
+    assert cfg.provider == "gemini_v2"
+    assert cfg.model_name == "gemini-embedding-2-preview"
+    assert cfg.api_key == "sk-test"
+    assert cfg.base_url is None
+    assert cfg.dimension == 1536
+
+
+def test_provider_config_defaults_dimension_to_none():
+    from paper_embedder.types import ProviderConfig
+
+    cfg = ProviderConfig(provider="gemini_v2", model_name="foo", api_key="k")
+    assert cfg.dimension is None
+
+
+def test_provider_config_rejects_unknown_provider():
+    import pytest
+
+    from paper_embedder.errors import ConfigError
+    from paper_embedder.types import ProviderConfig
+
+    with pytest.raises(ConfigError, match="provider"):
+        ProviderConfig(provider="bogus", model_name="foo", api_key="k")  # type: ignore[arg-type]

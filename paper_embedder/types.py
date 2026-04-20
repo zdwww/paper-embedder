@@ -37,3 +37,27 @@ class PaperDescriptor:
             raise ValueError(
                 f"item_type must be one of {_VALID_ITEM_TYPES}, got {self.item_type!r}"
             )
+
+
+from paper_embedder.errors import ConfigError
+
+
+ProviderName = Literal["gemini_v2", "openai", "huggingface"]
+_VALID_PROVIDERS: tuple[str, ...] = ("gemini_v2", "openai", "huggingface")
+
+
+@dataclass(frozen=True)
+class ProviderConfig:
+    """Configuration used by get_provider() to construct a Provider instance."""
+
+    provider: ProviderName
+    model_name: str
+    api_key: str | None = None
+    base_url: str | None = None
+    dimension: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.provider not in _VALID_PROVIDERS:
+            raise ConfigError(
+                f"provider must be one of {_VALID_PROVIDERS}, got {self.provider!r}"
+            )
