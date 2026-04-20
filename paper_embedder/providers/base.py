@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal, Protocol, runtime_checkable
 
 import numpy as np
+import numpy.typing as npt
 
 EmbedMode = Literal["document", "query"]
 
@@ -17,7 +18,7 @@ class Provider(Protocol):
     dim: int
     max_input_tokens: int
 
-    def embed(self, texts: list[str], *, mode: EmbedMode) -> list[np.ndarray]:
+    def embed(self, texts: list[str], *, mode: EmbedMode) -> list[npt.NDArray[np.float32]]:
         """Embed a batch of texts. `mode` selects document- vs. query-side handling
         (e.g. Gemini v2 uses different prefixes, OpenAI ignores, etc.).
         Returns one np.ndarray of shape (dim,) per input text.

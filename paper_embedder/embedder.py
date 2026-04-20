@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from paper_embedder.composers import compose_abstract_text, compose_section_fulltext
 from paper_embedder.providers.base import Provider
@@ -10,7 +11,7 @@ from paper_embedder.section_extractor import extract_intro_and_methods
 from paper_embedder.types import PaperDescriptor, PaperEmbeddingResult
 
 
-def embed_query(text: str, provider: Provider) -> np.ndarray:
+def embed_query(text: str, provider: Provider) -> npt.NDArray[np.float32]:
     """Embed a search query. Uses mode='query' so provider can apply the right
     prefix/task-type for asymmetric query/doc retrieval."""
     cleaned = text.strip()
@@ -37,7 +38,7 @@ def embed_paper(paper: PaperDescriptor, provider: Provider) -> PaperEmbeddingRes
     abstract_text = compose_abstract_text(paper)
     [abstract_vec] = provider.embed([abstract_text], mode="document")
 
-    fulltext_vec: np.ndarray | None = None
+    fulltext_vec: npt.NDArray[np.float32] | None = None
     if paper.item_type == "paper" and paper.pdf_path is not None:
         section_text = extract_intro_and_methods(paper.pdf_path)
         if section_text is not None:

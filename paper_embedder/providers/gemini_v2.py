@@ -14,6 +14,7 @@ import time
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from google import genai
 
 from paper_embedder.errors import ProviderError
@@ -72,7 +73,7 @@ class GeminiV2Provider:
         texts: list[str],
         *,
         mode: Literal["document", "query"],
-    ) -> list[np.ndarray]:
+    ) -> list[npt.NDArray[np.float32]]:
         prefix = _V2_DOC_PREFIX if mode == "document" else _V2_QUERY_PREFIX
         prefixed = [prefix + self.truncate(t) for t in texts]
 

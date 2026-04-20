@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 
 from paper_embedder.errors import ConfigError
 
@@ -65,6 +66,6 @@ class ProviderConfig:
 class PaperEmbeddingResult:
     """Returned by embed_paper(). fulltext_vec is None if no PDF or extraction failed."""
 
-    abstract_vec: np.ndarray
-    fulltext_vec: np.ndarray | None
+    abstract_vec: npt.NDArray[np.float32]
+    fulltext_vec: npt.NDArray[np.float32] | None
     metadata: dict[str, object] = field(default_factory=dict)
