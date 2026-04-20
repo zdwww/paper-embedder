@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-embedder"
+version = "0.2.0"
+description = "Shared paper-embedding extraction library for zotero-mcp and My-Research-Assistant."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "dwww"}]
+license = {text = "MIT"}
+dependencies = [
+    "google-genai>=0.7.0",
+    "pdfminer.six>=20221105",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[tool.setuptools.packages.find]
+include = ["paper_embedder*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
