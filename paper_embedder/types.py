@@ -61,3 +61,12 @@ class ProviderConfig:
             raise ConfigError(
                 f"provider must be one of {_VALID_PROVIDERS}, got {self.provider!r}"
             )
+
+
+@dataclass(frozen=True)
+class PaperEmbeddingResult:
+    """Returned by embed_paper(). fulltext_vec is None if no PDF or extraction failed."""
+
+    abstract_vec: np.ndarray
+    fulltext_vec: np.ndarray | None
+    metadata: dict = field(default_factory=dict)
