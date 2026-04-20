@@ -59,3 +59,22 @@ def test_compose_abstract_deterministic():
 
     desc = PaperDescriptor(paper_id="p1", title="T", abstract="A.")
     assert compose_abstract_text(desc) == compose_abstract_text(desc)
+
+
+def test_compose_section_fulltext_prepends_title():
+    from paper_embedder.composers import compose_section_fulltext
+    from paper_embedder.types import PaperDescriptor
+
+    desc = PaperDescriptor(paper_id="p1", title="Transformer Paper")
+    out = compose_section_fulltext(desc, "1. Introduction\nWe introduce...")
+    assert out.startswith("Transformer Paper\n\n")
+    assert "Introduction" in out
+
+
+def test_compose_section_fulltext_strips_surrounding_whitespace():
+    from paper_embedder.composers import compose_section_fulltext
+    from paper_embedder.types import PaperDescriptor
+
+    desc = PaperDescriptor(paper_id="p1", title="  T  ")
+    out = compose_section_fulltext(desc, "\n\nBody\n\n")
+    assert out == "T\n\nBody"
