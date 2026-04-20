@@ -130,3 +130,91 @@ def test_embed_passes_model_name():
         p.embed(["hi"], mode="document")
 
     assert fake.models.embed_content.call_args.kwargs["model"] == "gemini-embedding-2-preview"
+
+
+def test_embed_retries_on_transient_error_then_succeeds(monkeypatch):
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    # no-op sleep so the test is fast
+    monkeypatch.setattr("paper_embedder.providers.gemini_v2.time.sleep", lambda _: None)
+
+    class _Transient(Exception):
+        pass
+    _Transient.__name__ = "RateLimitError"
+
+    fake = MagicMock()
+    good_result = _FakeEmbedResult([[0.5] * 1536])
+    fake.models.embed_content.side_effect = [_Transient("slow down"), good_result]
+
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        vecs = p.embed(["hi"], mode="document")
+
+    assert len(vecs) == 1
+    assert fake.models.embed_content.call_count == 2
+
+
+def test_embed_raises_provider_error_after_3_transient_failures(monkeypatch):
+    from paper_embedder.errors import ProviderError
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    monkeypatch.setattr("paper_embedder.providers.gemini_v2.time.sleep", lambda _: None)
+
+    class _Transient(Exception):
+        pass
+    _Transient.__name__ = "ServerError"
+
+    fake = MagicMock()
+    fake.models.embed_content.side_effect = _Transient("boom")
+
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        with pytest.raises(ProviderError):
+            p.embed(["hi"], mode="document")
+
+    # initial call + 3 retries == 4 total attempts
+    assert fake.models.embed_content.call_count == 4
+
+
+def test_embed_permanent_error_raises_immediately_no_retry():
+    from paper_embedder.errors import ProviderError
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    class _Permanent(Exception):
+        pass
+    _Permanent.__name__ = "InvalidArgumentError"
+
+    fake = MagicMock()
+    fake.models.embed_content.side_effect = _Permanent("bad input")
+
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        with pytest.raises(ProviderError):
+            p.embed(["hi"], mode="document")
+
+    assert fake.models.embed_content.call_count == 1
+
+
+def test_embed_uses_exponential_backoff_timings(monkeypatch):
+    from paper_embedder.providers.gemini_v2 import GeminiV2Provider
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(
+        "paper_embedder.providers.gemini_v2.time.sleep",
+        lambda s: sleeps.append(s),
+    )
+
+    class _Transient(Exception):
+        pass
+    _Transient.__name__ = "RateLimitError"
+
+    fake = MagicMock()
+    fake.models.embed_content.side_effect = [
+        _Transient(), _Transient(), _FakeEmbedResult([[0.1] * 1536])
+    ]
+
+    with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake):
+        p = GeminiV2Provider(api_key="k", model_name="gemini-embedding-2-preview", dim=1536)
+        p.embed(["hi"], mode="document")
+
+    assert sleeps == [1.0, 4.0]

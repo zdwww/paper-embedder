@@ -10,10 +10,13 @@ char-based estimate (≈4 chars/token).
 from __future__ import annotations
 
 import hashlib
+import time
 from typing import Literal
 
 import numpy as np
 from google import genai
+
+from paper_embedder.errors import ProviderError
 
 
 _V2_DOC_PREFIX = "Represent this document for retrieval: "
@@ -24,6 +27,16 @@ _V2_MAX_INPUT_TOKENS = _V2_HARD_CAP_TOKENS - _V2_PREFIX_TOKEN_BUDGET  # 8172
 _CHARS_PER_TOKEN_ESTIMATE = 4
 # Effective safe budget in chars, tuned one token below ceiling to stay comfortably under cap.
 _V2_MAX_INPUT_CHARS = (_V2_MAX_INPUT_TOKENS - 192) * _CHARS_PER_TOKEN_ESTIMATE  # ≈ 31920
+
+
+_TRANSIENT_MARKERS = ("RateLimit", "Server", "Internal", "Unavailable", "Deadline")
+_MAX_RETRIES = 3
+_BACKOFF_SECONDS = (1.0, 4.0, 16.0)
+
+
+def _is_transient(exc: BaseException) -> bool:
+    name = type(exc).__name__
+    return any(marker in name for marker in _TRANSIENT_MARKERS)
 
 
 class GeminiV2Provider:
@@ -67,10 +80,21 @@ class GeminiV2Provider:
         if self._client is None:
             self._client = genai.Client(api_key=self._api_key)
 
-        response = self._client.models.embed_content(
-            model=self._model_name,
-            contents=prefixed,
-        )
-        return [
-            np.asarray(emb.values, dtype=np.float32) for emb in response.embeddings
-        ]
+        attempt = 0
+        while True:
+            try:
+                response = self._client.models.embed_content(
+                    model=self._model_name,
+                    contents=prefixed,
+                )
+                return [
+                    np.asarray(emb.values, dtype=np.float32)
+                    for emb in response.embeddings
+                ]
+            except Exception as exc:
+                if not _is_transient(exc) or attempt >= _MAX_RETRIES:
+                    raise ProviderError(
+                        f"Gemini v2 embed failed ({type(exc).__name__}): {exc}"
+                    ) from exc
+                time.sleep(_BACKOFF_SECONDS[attempt])
+                attempt += 1
