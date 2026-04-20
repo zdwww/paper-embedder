@@ -164,3 +164,40 @@ def test_embed_paper_propagates_provider_error():
 
     with pytest.raises(ProviderError, match="upstream failure"):
         embed_paper(PaperDescriptor(paper_id="p1", title="T"), provider)
+
+
+def test_embed_paper_does_not_modify_input_pdf(tmp_path):
+    """Bottom-line invariant (spec §1): never modify source PDFs. Check SHA-256 +
+    mtime + size before and after a full embed_paper call."""
+    import hashlib
+    import os
+
+    from paper_embedder.embedder import embed_paper
+    from paper_embedder.types import PaperDescriptor
+
+    # Minimal real PDF content
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(
+        b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        b"2 0 obj<</Type/Pages/Count 0/Kids[]>>endobj\n"
+        b"xref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n"
+        b"0000000055 00000 n\ntrailer<</Size 3/Root 1 0 R>>\n"
+        b"startxref\n103\n%%EOF\n"
+    )
+    before_sha = hashlib.sha256(pdf.read_bytes()).hexdigest()
+    before_stat = pdf.stat()
+
+    provider = _fake_provider()
+    # extract will return None on this minimal PDF — that's fine, we only care
+    # that pdf contents are unchanged.
+    embed_paper(
+        PaperDescriptor(paper_id="p1", title="T", abstract="A.", pdf_path=pdf, item_type="paper"),
+        provider,
+    )
+
+    after_sha = hashlib.sha256(pdf.read_bytes()).hexdigest()
+    after_stat = pdf.stat()
+
+    assert before_sha == after_sha, "PDF contents must be unchanged"
+    assert before_stat.st_size == after_stat.st_size, "PDF size must be unchanged"
+    assert before_stat.st_mtime_ns == after_stat.st_mtime_ns, "PDF mtime must be unchanged"
