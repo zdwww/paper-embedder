@@ -47,3 +47,44 @@ def test_embed_query_strips_surrounding_whitespace():
     embed_query("   hello   ", provider)
 
     assert provider.embed.call_args.args[0] == ["hello"]
+
+
+def test_embed_paper_with_pdf_returns_both_vectors(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    from paper_embedder import embedder, section_extractor
+    from paper_embedder.embedder import embed_paper
+    from paper_embedder.types import PaperDescriptor
+
+    # Stub section extraction so we don't need a real PDF.
+    monkeypatch.setattr(
+        section_extractor,
+        "extract_intro_and_methods",
+        lambda p, max_scan_pages=10: "1. Introduction\nBody of intro.\n2. Methods\nStuff.",
+    )
+    # Ensure the embedder module also calls the same stub (it imports at top-level).
+    monkeypatch.setattr(
+        embedder,
+        "extract_intro_and_methods",
+        section_extractor.extract_intro_and_methods,
+    )
+
+    pdf = tmp_path / "p.pdf"
+    pdf.write_bytes(b"%PDF-fake")
+
+    provider = _fake_provider(dim=1536)
+    result = embed_paper(
+        PaperDescriptor(
+            paper_id="p1", title="T", abstract="A.", pdf_path=pdf, item_type="paper",
+        ),
+        provider,
+    )
+
+    assert result.abstract_vec.shape == (1536,)
+    assert result.fulltext_vec is not None
+    assert result.fulltext_vec.shape == (1536,)
+    assert result.metadata["model"] == "gemini_v2"
+    assert result.metadata["dim"] == 1536
+    assert result.metadata["fingerprint"] == "deadbeef"
+    # Provider called twice: once for abstract, once for fulltext
+    assert provider.embed.call_count == 2
