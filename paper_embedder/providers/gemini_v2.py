@@ -30,6 +30,11 @@ _CHARS_PER_TOKEN_ESTIMATE = 4
 _V2_MAX_INPUT_CHARS = (_V2_MAX_INPUT_TOKENS - 192) * _CHARS_PER_TOKEN_ESTIMATE  # ≈ 31920
 
 
+# Transient-error detection via substring match on exception class names. google-genai
+# today does not expose a stable typed exception hierarchy we can isinstance-check, so we
+# fall back to name matching. v0.3 migration path: once google-genai publishes typed
+# exceptions (e.g. google.api_core.exceptions.{ResourceExhausted, DeadlineExceeded,
+# ServiceUnavailable, InternalServerError}), replace _is_transient with isinstance checks.
 _TRANSIENT_MARKERS = ("RateLimit", "Server", "Internal", "Unavailable", "Deadline")
 _MAX_RETRIES = 3
 _BACKOFF_SECONDS = (1.0, 4.0, 16.0)

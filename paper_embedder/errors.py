@@ -11,7 +11,3 @@ class ConfigError(PaperEmbedderError):
 
 class ProviderError(PaperEmbedderError):
     """Raised when an embedding provider's API call fails after retries."""
-
-
-class ExtractionError(PaperEmbedderError):
-    """Raised internally by SectionExtractor; normally caught and converted to fulltext_vec=None."""

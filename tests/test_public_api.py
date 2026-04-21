@@ -4,7 +4,7 @@
 def test_public_imports():
     from paper_embedder import (
         ConfigError,
-        ExtractionError,
+        EmbeddingMetadata,
         PaperDescriptor,
         PaperEmbedderError,
         PaperEmbeddingResult,
@@ -15,16 +15,15 @@ def test_public_imports():
         get_provider,
     )
 
-    # Each symbol is callable or a class, not a module-level typo
     assert PaperDescriptor is not None
     assert ProviderConfig is not None
     assert PaperEmbeddingResult is not None
+    assert EmbeddingMetadata is not None
     assert callable(get_provider)
     assert callable(embed_paper)
     assert callable(embed_query)
     assert issubclass(ConfigError, PaperEmbedderError)
     assert issubclass(ProviderError, PaperEmbedderError)
-    assert issubclass(ExtractionError, PaperEmbedderError)
 
 
 def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):

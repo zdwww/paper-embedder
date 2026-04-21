@@ -1,10 +1,10 @@
-"""Public dataclass types: PaperDescriptor, ProviderConfig, PaperEmbeddingResult."""
+"""Public dataclass and TypedDict types for the paper-embedder public API."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -62,10 +62,23 @@ class ProviderConfig:
             )
 
 
+class EmbeddingMetadata(TypedDict):
+    """Shape of PaperEmbeddingResult.metadata. `fingerprint` is the provider's
+    cache key — downstream callers rely on it to detect config changes."""
+
+    model: str
+    dim: int
+    fingerprint: str
+
+
+def _empty_metadata() -> EmbeddingMetadata:
+    return EmbeddingMetadata(model="", dim=0, fingerprint="")
+
+
 @dataclass(frozen=True)
 class PaperEmbeddingResult:
     """Returned by embed_paper(). fulltext_vec is None if no PDF or extraction failed."""
 
     abstract_vec: npt.NDArray[np.float32]
     fulltext_vec: npt.NDArray[np.float32] | None
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: EmbeddingMetadata = field(default_factory=_empty_metadata)

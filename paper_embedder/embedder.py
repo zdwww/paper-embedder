@@ -8,7 +8,7 @@ import numpy.typing as npt
 from paper_embedder.composers import compose_abstract_text, compose_section_fulltext
 from paper_embedder.providers.base import Provider
 from paper_embedder.section_extractor import extract_intro_and_methods
-from paper_embedder.types import PaperDescriptor, PaperEmbeddingResult
+from paper_embedder.types import EmbeddingMetadata, PaperDescriptor, PaperEmbeddingResult
 
 
 def embed_query(text: str, provider: Provider) -> npt.NDArray[np.float32]:
@@ -45,12 +45,13 @@ def embed_paper(paper: PaperDescriptor, provider: Provider) -> PaperEmbeddingRes
             fulltext_text = compose_section_fulltext(paper, section_text)
             [fulltext_vec] = provider.embed([fulltext_text], mode="document")
 
+    metadata: EmbeddingMetadata = {
+        "model": provider.name,
+        "dim": provider.dim,
+        "fingerprint": provider.fingerprint(),
+    }
     return PaperEmbeddingResult(
         abstract_vec=abstract_vec,
         fulltext_vec=fulltext_vec,
-        metadata={
-            "model": provider.name,
-            "dim": provider.dim,
-            "fingerprint": provider.fingerprint(),
-        },
+        metadata=metadata,
     )

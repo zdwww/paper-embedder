@@ -91,27 +91,34 @@ def test_provider_config_rejects_unknown_provider():
 def test_paper_embedding_result_with_both_vectors():
     import numpy as np
 
-    from paper_embedder.types import PaperEmbeddingResult
+    from paper_embedder.types import EmbeddingMetadata, PaperEmbeddingResult
 
+    meta: EmbeddingMetadata = {
+        "model": "gemini-embedding-2-preview",
+        "dim": 1536,
+        "fingerprint": "sha256:abc",
+    }
     result = PaperEmbeddingResult(
         abstract_vec=np.zeros(1536, dtype=np.float32),
         fulltext_vec=np.ones(1536, dtype=np.float32),
-        metadata={"model": "gemini-embedding-2-preview", "dim": 1536},
+        metadata=meta,
     )
     assert result.abstract_vec.shape == (1536,)
     assert result.fulltext_vec is not None
     assert result.fulltext_vec.shape == (1536,)
     assert result.metadata["model"] == "gemini-embedding-2-preview"
+    assert result.metadata["fingerprint"] == "sha256:abc"
 
 
 def test_paper_embedding_result_fulltext_optional():
     import numpy as np
 
-    from paper_embedder.types import PaperEmbeddingResult
+    from paper_embedder.types import EmbeddingMetadata, PaperEmbeddingResult
 
+    meta: EmbeddingMetadata = {"model": "foo", "dim": 1536, "fingerprint": "fp"}
     result = PaperEmbeddingResult(
         abstract_vec=np.zeros(1536, dtype=np.float32),
         fulltext_vec=None,
-        metadata={"model": "foo", "dim": 1536},
+        metadata=meta,
     )
     assert result.fulltext_vec is None

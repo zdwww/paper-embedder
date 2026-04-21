@@ -6,14 +6,12 @@ import pytest
 def test_exception_hierarchy():
     from paper_embedder.errors import (
         ConfigError,
-        ExtractionError,
         PaperEmbedderError,
         ProviderError,
     )
 
     assert issubclass(ConfigError, PaperEmbedderError)
     assert issubclass(ProviderError, PaperEmbedderError)
-    assert issubclass(ExtractionError, PaperEmbedderError)
     assert issubclass(PaperEmbedderError, Exception)
 
 
