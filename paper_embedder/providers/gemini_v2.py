@@ -91,7 +91,7 @@ class GeminiV2Provider:
             try:
                 response = self._client.models.embed_content(
                     model=self._model_name,
-                    contents=prefixed,
+                    contents=prefixed,  # type: ignore[arg-type]  # google-genai stubs miss list[str]
                     config=types.EmbedContentConfig(
                         output_dimensionality=self.dim,
                     ),

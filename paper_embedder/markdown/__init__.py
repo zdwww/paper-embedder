@@ -14,7 +14,7 @@ Rules:
 from __future__ import annotations
 
 try:
-    import marker  # noqa: F401
+    import marker  # type: ignore[import-untyped]  # noqa: F401
 except ImportError as e:
     raise ImportError(
         "paper_embedder.markdown requires the [marker] extra. "
@@ -52,24 +52,24 @@ _MD_HEADING_RE = re.compile(
     re.MULTILINE,
 )
 
-_MODELS = None
+_MODELS: object | None = None
 
 
-def _get_models():
+def _get_models() -> object:
     """Load Marker's model dict once per process; cached."""
     global _MODELS
     if _MODELS is None:
-        from marker.models import create_model_dict
+        from marker.models import create_model_dict  # type: ignore[import-untyped]
         _MODELS = create_model_dict()
     return _MODELS
 
 
-def _find_section_pages(pdf_path: Path) -> tuple[list[int], dict]:
+def _find_section_pages(pdf_path: Path) -> tuple[list[int], dict[str, object]]:
     """Phase 1 - pypdfium2 pre-scan. Returns (page_range, metadata).
 
     Port of MRA/converters/section_extract.py lines 71-143.
     """
-    import pypdfium2 as pdfium
+    import pypdfium2 as pdfium  # type: ignore[import-untyped]
 
     doc = pdfium.PdfDocument(str(pdf_path))
     page_count = len(doc)
@@ -112,7 +112,7 @@ def _find_section_pages(pdf_path: Path) -> tuple[list[int], dict]:
     if len(page_range) < 2:
         page_range = list(range(0, min(FALLBACK_MAX_PAGE + 1, page_count)))
 
-    metadata = {
+    metadata: dict[str, object] = {
         "total_pages": page_count,
         "pages_converted": len(page_range),
         "stop_page": stop_page,
@@ -174,8 +174,8 @@ def _run_marker(pdf_path: Path, page_range: list[int]) -> str:
     Rule R1: fresh PdfConverter per call. Never reused.
     Rule R2: always honor page_range from pre-scan.
     """
-    from marker.converters.pdf import PdfConverter
-    from marker.output import text_from_rendered
+    from marker.converters.pdf import PdfConverter  # type: ignore[import-untyped]
+    from marker.output import text_from_rendered  # type: ignore[import-untyped]
 
     conv = PdfConverter(
         artifact_dict=_get_models(),
@@ -184,7 +184,7 @@ def _run_marker(pdf_path: Path, page_range: list[int]) -> str:
     try:
         rendered = conv(str(pdf_path))
         text, _, _ = text_from_rendered(rendered)
-        return text
+        return str(text)  # text_from_rendered returns Any; cast to str
     finally:
         del conv
 
@@ -195,7 +195,7 @@ def _extract_sections(markdown_text: str) -> str:
     Port of MRA/converters/section_extract.py lines 160-211 (image handling
     stripped — the wrapper does not persist images).
     """
-    headings = []
+    headings: list[dict[str, int | str]] = []
     for m in _MD_HEADING_RE.finditer(markdown_text):
         headings.append({
             "pos": m.start(),
@@ -206,19 +206,19 @@ def _extract_sections(markdown_text: str) -> str:
     if not headings:
         return markdown_text
 
-    intro_start = None
+    intro_start: int | None = None
     for h in headings:
         if h["sec_num"] == 1:
-            intro_start = h["pos"]
+            intro_start = int(h["pos"])
             break
     if intro_start is None:
         intro_start = 0
 
-    stop_pos = None
+    stop_pos: int | None = None
     for h in headings:
-        title_lower = h["title"].lower()
+        title_lower = str(h["title"]).lower()
         if any(kw in title_lower for kw in STOP_KEYWORDS):
-            stop_pos = h["pos"]
+            stop_pos = int(h["pos"])
             break
 
     if stop_pos is None:
