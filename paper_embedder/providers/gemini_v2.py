@@ -91,7 +91,9 @@ class GeminiV2Provider:
             try:
                 response = self._client.models.embed_content(
                     model=self._model_name,
-                    contents=prefixed,  # type: ignore[arg-type]  # google-genai stubs miss list[str]
+                    # google-genai arg-type for contents=list[str] varies by SDK version:
+                    # flagged on 1.73+, permissive on older versions. Allow both.
+                    contents=prefixed,  # type: ignore[arg-type, unused-ignore]
                     config=types.EmbedContentConfig(
                         output_dimensionality=self.dim,
                     ),

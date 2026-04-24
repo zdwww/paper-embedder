@@ -14,7 +14,7 @@ Rules:
 from __future__ import annotations
 
 try:
-    import marker  # type: ignore[import-untyped]  # noqa: F401
+    import marker  # noqa: F401
 except ImportError as e:
     raise ImportError(
         "paper_embedder.markdown requires the [marker] extra. "
@@ -59,7 +59,7 @@ def _get_models() -> object:
     """Load Marker's model dict once per process; cached."""
     global _MODELS
     if _MODELS is None:
-        from marker.models import create_model_dict  # type: ignore[import-untyped]
+        from marker.models import create_model_dict
         _MODELS = create_model_dict()
     return _MODELS
 
@@ -174,8 +174,8 @@ def _run_marker(pdf_path: Path, page_range: list[int]) -> str:
     Rule R1: fresh PdfConverter per call. Never reused.
     Rule R2: always honor page_range from pre-scan.
     """
-    from marker.converters.pdf import PdfConverter  # type: ignore[import-untyped]
-    from marker.output import text_from_rendered  # type: ignore[import-untyped]
+    from marker.converters.pdf import PdfConverter
+    from marker.output import text_from_rendered
 
     conv = PdfConverter(
         artifact_dict=_get_models(),
