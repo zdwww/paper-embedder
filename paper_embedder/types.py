@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Literal, TypedDict
 
 import numpy as np
@@ -20,7 +19,8 @@ class PaperDescriptor:
     """Describes a paper (or non-paper Zotero item) for embedding.
 
     For item_type='paper': title + abstract are required for the abstract vector;
-    pdf_path enables the section_fulltext vector.
+    fulltext_text enables the section-fulltext vector. Callers are responsible
+    for producing fulltext_text (e.g. via paper_embedder.markdown.prepare_fulltext).
 
     For item_type='non_paper': falls back to title+creators+notes+tags composition.
     """
@@ -28,7 +28,7 @@ class PaperDescriptor:
     paper_id: str
     title: str
     abstract: str | None = None
-    pdf_path: Path | None = None
+    fulltext_text: str | None = None
     item_type: ItemType = "paper"
     creators: str | None = None
     notes: str | None = None
@@ -77,7 +77,8 @@ def _empty_metadata() -> EmbeddingMetadata:
 
 @dataclass(frozen=True)
 class PaperEmbeddingResult:
-    """Returned by embed_paper(). fulltext_vec is None if no PDF or extraction failed."""
+    """Returned by embed_paper(). fulltext_vec is None if fulltext_text was
+    None or empty at call time."""
 
     abstract_vec: npt.NDArray[np.float32]
     fulltext_vec: npt.NDArray[np.float32] | None

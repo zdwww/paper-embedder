@@ -1,7 +1,5 @@
 """Dataclass types: PaperDescriptor."""
 
-from pathlib import Path
-
 import pytest
 
 
@@ -12,7 +10,7 @@ def test_paper_descriptor_minimal():
     assert desc.paper_id == "p1"
     assert desc.title == "Title"
     assert desc.abstract is None
-    assert desc.pdf_path is None
+    assert desc.fulltext_text is None
     assert desc.item_type == "paper"
     assert desc.creators is None
     assert desc.notes is None
@@ -26,11 +24,12 @@ def test_paper_descriptor_full():
         paper_id="p1",
         title="Title",
         abstract="Abstract.",
-        pdf_path=Path("/tmp/p1.pdf"),
+        fulltext_text="1. Introduction\nbody\n2. Method\nmore",
         item_type="paper",
     )
     assert desc.abstract == "Abstract."
-    assert desc.pdf_path == Path("/tmp/p1.pdf")
+    assert desc.fulltext_text is not None
+    assert "1. Introduction" in desc.fulltext_text
 
 
 def test_paper_descriptor_non_paper():
@@ -79,8 +78,6 @@ def test_provider_config_defaults_dimension_to_none():
 
 
 def test_provider_config_rejects_unknown_provider():
-    import pytest
-
     from paper_embedder.errors import ConfigError
     from paper_embedder.types import ProviderConfig
 
