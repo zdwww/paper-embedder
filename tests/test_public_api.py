@@ -26,9 +26,19 @@ def test_public_imports():
     assert issubclass(ProviderError, PaperEmbedderError)
 
 
-def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):
-    """End-to-end: ProviderConfig → get_provider → embed_paper. Network + PDF
-    extraction both mocked so this test runs without external deps."""
+def test_markdown_submodule_is_not_exported_at_top_level():
+    """paper_embedder.markdown is a submodule — callers must import it explicitly.
+    It must NOT be re-exported at the top-level paper_embedder namespace."""
+    import paper_embedder
+
+    assert not hasattr(paper_embedder, "prepare_fulltext")
+    assert "prepare_fulltext" not in getattr(paper_embedder, "__all__", [])
+
+
+def test_end_to_end_with_stubbed_provider(tmp_path):
+    """End-to-end: ProviderConfig → get_provider → embed_paper. Network is
+    mocked. The caller has already produced fulltext_text (in real life this
+    would come from paper_embedder.markdown.prepare_fulltext)."""
     from unittest.mock import patch
 
     import numpy as np
@@ -38,19 +48,6 @@ def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):
         ProviderConfig,
         embed_paper,
         get_provider,
-        section_extractor,
-    )
-    from paper_embedder import embedder as embedder_mod
-
-    monkeypatch.setattr(
-        section_extractor,
-        "extract_intro_and_methods",
-        lambda p, max_scan_pages=10: "1. Introduction\nBody.\n2. Methods\nMore.",
-    )
-    monkeypatch.setattr(
-        embedder_mod,
-        "extract_intro_and_methods",
-        section_extractor.extract_intro_and_methods,
     )
 
     class _FakeResult:
@@ -67,9 +64,6 @@ def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):
         [[0.1] * 1536 for _ in contents]
     )
 
-    pdf = tmp_path / "p.pdf"
-    pdf.write_bytes(b"%PDF-fake")
-
     with patch("paper_embedder.providers.gemini_v2.genai.Client", return_value=fake_client):
         provider = get_provider(
             ProviderConfig(
@@ -84,7 +78,7 @@ def test_end_to_end_with_stubbed_provider_and_extractor(monkeypatch, tmp_path):
                 paper_id="p1",
                 title="Title",
                 abstract="Abstract text.",
-                pdf_path=pdf,
+                fulltext_text="1. Introduction\nBody.\n2. Methods\nMore.",
                 item_type="paper",
             ),
             provider,
