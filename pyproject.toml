@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paper-embedder"
-version = "0.2.3"
+version = "0.3.0"
 description = "Shared paper-embedding extraction library for zotero-mcp and My-Research-Assistant."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,6 @@ authors = [{name = "dwww"}]
 license = {text = "MIT"}
 dependencies = [
     "google-genai>=0.7.0",
-    "pdfminer.six>=20221105",
     "numpy>=1.26",
 ]
 
@@ -22,6 +21,11 @@ dev = [
     "pytest-mock>=3.12",
     "ruff>=0.4",
     "mypy>=1.10",
+    "pypdfium2>=4",
+]
+marker = [
+    "marker-pdf>=1.0",
+    "pypdfium2>=4",
 ]
 
 [tool.setuptools.packages.find]
@@ -31,6 +35,9 @@ exclude = ["tests*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --strict-markers"
+markers = [
+    "slow: real-Marker integration tests; opt in via MARKER_INTEGRATION=1",
+]
 
 [tool.ruff]
 line-length = 100
