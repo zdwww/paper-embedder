@@ -12,7 +12,13 @@ from unittest.mock import patch
 
 import pytest
 
-from paper_embedder.markdown import (
+# paper_embedder.markdown eagerly imports marker at module top; if marker-pdf
+# isn't installed (e.g. CI running `.[dev]` without `[marker]`), skip this
+# whole file. Individual tests below still mock out Marker internals so the
+# real pipeline never runs.
+pytest.importorskip("marker")
+
+from paper_embedder.markdown import (  # noqa: E402
     LARGE_PDF_THRESHOLD_BYTES,
     MIN_OUTPUT_CHARS,
     STOP_KEYWORDS,
