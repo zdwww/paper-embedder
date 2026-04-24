@@ -7,7 +7,6 @@ import numpy.typing as npt
 
 from paper_embedder.composers import compose_abstract_text, compose_section_fulltext
 from paper_embedder.providers.base import Provider
-from paper_embedder.section_extractor import extract_intro_and_methods
 from paper_embedder.types import EmbeddingMetadata, PaperDescriptor, PaperEmbeddingResult
 
 
@@ -22,28 +21,27 @@ def embed_query(text: str, provider: Provider) -> npt.NDArray[np.float32]:
 def embed_paper(paper: PaperDescriptor, provider: Provider) -> PaperEmbeddingResult:
     """Build both vectors for a paper (or single vector for non_paper items).
 
-    Paper items with a pdf_path:
+    Paper items with fulltext_text:
       - abstract_vec from 'title. abstract' text
-      - fulltext_vec from 'title + intro+methods' text (None if extraction fails)
+      - fulltext_vec from 'title + fulltext_text' text
 
-    Paper items without pdf_path:
+    Paper items without fulltext_text (or fulltext_text=''):
       - abstract_vec only; fulltext_vec = None
 
     Non-paper items:
       - abstract_vec from concat(title, creators, notes, tags); fulltext_vec = None
+      - fulltext_text is ignored even if present
 
-    Never raises for extraction failures (returns None fulltext_vec). Provider
-    failures propagate as ProviderError.
+    Pure function: no filesystem writes, no PDF parsing, no network I/O beyond
+    the provider's own retries. Provider failures propagate as ProviderError.
     """
     abstract_text = compose_abstract_text(paper)
     [abstract_vec] = provider.embed([abstract_text], mode="document")
 
     fulltext_vec: npt.NDArray[np.float32] | None = None
-    if paper.item_type == "paper" and paper.pdf_path is not None:
-        section_text = extract_intro_and_methods(paper.pdf_path)
-        if section_text is not None:
-            fulltext_text = compose_section_fulltext(paper, section_text)
-            [fulltext_vec] = provider.embed([fulltext_text], mode="document")
+    if paper.item_type == "paper" and paper.fulltext_text:
+        fulltext_text = compose_section_fulltext(paper, paper.fulltext_text)
+        [fulltext_vec] = provider.embed([fulltext_text], mode="document")
 
     metadata: EmbeddingMetadata = {
         "model": provider.name,
